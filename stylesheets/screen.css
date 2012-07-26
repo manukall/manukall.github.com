@@ -569,7 +569,7 @@ dd p:first-child {
 }
 
 .portfolio .project {
-  border-bottom: .4em double #D3CCC1;
+  border-bottom: .1em solid #D3CCC1;
   margin-bottom: 2em;
   background-position-y: 13px;
 }
