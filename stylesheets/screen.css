@@ -567,3 +567,19 @@ dd p:first-child {
   font-size: .85em;
   font-style: italic;
 }
+
+.portfolio .project {
+  border-bottom: .4em double #D3CCC1;
+  margin-bottom: 2em;
+  background-position-y: 13px;
+}
+
+.portfolio .project.last {
+  border-bottom: none;
+  margin-bottom: 2em;
+}
+
+.portfolio .project_name {
+  font-weight: bold;
+  font-size: 1.5em;
+}
