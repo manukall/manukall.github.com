@@ -1,8 +1,8 @@
 # Site settings
 title: manukall
-header-img: img/fox.jpe
+header-img: img/fox.jpg
 email: mk@manukall.de
-description: "Write your site description here. It will be used as your sites meta description as well!"
+description: "Software development with Ruby, Rails, Elixir, Javascript and more."
 baseurl: ""
 url: "http://mk@manukall.de"
 twitter_username: manukall
