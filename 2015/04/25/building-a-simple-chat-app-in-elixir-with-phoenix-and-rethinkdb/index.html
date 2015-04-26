@@ -92,7 +92,7 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
 
-				<p>In this posts we will explore how to connect <a href="http://rethinkdb.com/" target="_blank">RethinkDBs</a> changefeeds to <a href="http://www.phoenixframework.org" target="blank">Phoenix’s</a> channels. We are going to build a chat app that stores messages in a RethinkDB database.
+				      <p>In this posts we will explore how to connect <a href="http://rethinkdb.com/" target="_blank">RethinkDBs</a> changefeeds to <a href="http://www.phoenixframework.org" target="blank">Phoenix’s</a> channels. We are going to build a chat app that stores messages in a RethinkDB database.
 When a user connects, we listen to a changefeed on the database.
 As soon as a new message row is inserted into the databases, we push the JSON we receive from the changefeed directly to the user.</p>
 
@@ -429,6 +429,26 @@ RethinkDB needs to be started for this. For toy projects like this, I prefer to 
         </div>
     </div>
 </article>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+      <div id="disqus_thread"></div>
+      <script type="text/javascript">
+       /* * * CONFIGURATION VARIABLES * * */
+       var disqus_shortname = 'manukallde';
+
+       /* * * DON'T EDIT BELOW THIS LINE * * */
+       (function() {
+         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+         dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+       })();
+      </script>
+      <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+    </div>
+  </div>
+</div>
 
 <hr>
 
