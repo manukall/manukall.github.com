@@ -3,9 +3,9 @@ layout: post
 title: "Building a Simple Chat App in Elixir With Phoenix and RethinkDB"
 date: 2015-04-25T19:47:13+02:00
 ---
-In this posts we will explore how to connect [RethinkDBs](http://rethinkdb.com/){:target="_blank"} changefeeds to [Phoenix's](http://www.phoenixframework.org){:target="blank"} channels. We are going to build a chat app that stores messages in a RethinkDB database.
+In this post we will explore how to connect [RethinkDBs](http://rethinkdb.com/){:target="_blank"} changefeeds to [Phoenix's](http://www.phoenixframework.org){:target="blank"} channels. We are going to build a chat app that stores messages in a RethinkDB database.
 When a user connects, we listen to a changefeed on the database.
-As soon as a new message row is inserted into the databases, we push the JSON we receive from the changefeed directly to the user.
+As soon as a new message row is inserted into the database, we push the JSON we receive from the changefeed directly to the user.
 
 For this, we will use the very young [exrethinkdb](https://github.com/hamiltop/exrethinkdb){:target="blank"} library. I'm assuming Elixir and Phoenix are already set up.
 
