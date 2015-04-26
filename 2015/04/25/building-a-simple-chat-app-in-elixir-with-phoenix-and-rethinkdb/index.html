@@ -92,9 +92,9 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
 
-				      <p>In this posts we will explore how to connect <a href="http://rethinkdb.com/" target="_blank">RethinkDBs</a> changefeeds to <a href="http://www.phoenixframework.org" target="blank">Phoenix’s</a> channels. We are going to build a chat app that stores messages in a RethinkDB database.
+				      <p>In this post we will explore how to connect <a href="http://rethinkdb.com/" target="_blank">RethinkDBs</a> changefeeds to <a href="http://www.phoenixframework.org" target="blank">Phoenix’s</a> channels. We are going to build a chat app that stores messages in a RethinkDB database.
 When a user connects, we listen to a changefeed on the database.
-As soon as a new message row is inserted into the databases, we push the JSON we receive from the changefeed directly to the user.</p>
+As soon as a new message row is inserted into the database, we push the JSON we receive from the changefeed directly to the user.</p>
 
 <p>For this, we will use the very young <a href="https://github.com/hamiltop/exrethinkdb" target="blank">exrethinkdb</a> library. I’m assuming Elixir and Phoenix are already set up.</p>
 
