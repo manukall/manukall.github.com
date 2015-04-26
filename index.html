@@ -1,152 +1,36 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="viewport" content="width=640" />
+---
+layout: page
+description: "Software development with Ruby, Rails, Elixir and more."
+---
 
-    <link rel="stylesheet" href="stylesheets/core.css" media="screen"/>
-    <link rel="stylesheet" href="stylesheets/mobile.css" media="handheld, only screen and (max-device-width:640px)"/>
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css"/>
+{% for post in paginator.posts %}
+<div class="post-preview">
+    <a href="{{ post.url | prepend: site.baseurl }}">
+        <h2 class="post-title">            {{ post.title }}
+        </h2>
+        {% if post.subtitle %}
+        <h3 class="post-subtitle">
+            {{ post.subtitle }}
+        </h3>
+        {% endif %}
+    </a>
+    <p class="post-meta">Posted by {% if post.author %}{{ post.author }}{% else %}{{ site.title }}{% endif %} on {{ post.date | date: "%B %-d, %Y" }}</p>
+</div>
+<hr>
+{% endfor %}
 
-    <script type="text/javascript" src="javascripts/modernizr.js"></script>
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script type="text/javascript" src="javascripts/headsmart.min.js"></script>
-    <script type="text/javascript">
-      $(document).ready(function () {
-          $('#main_content').headsmart()
-          })
-        </script>
-        <title>Manuel Kallenbach by manukall</title>
-
-        <script type="text/javascript">
-
-          var _gaq = _gaq || [];
-          _gaq.push(['_setAccount', 'UA-21849961-1']);
-          _gaq.push(['_trackPageview']);
-
-          (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-          })();
-
-        </script>
-      </head>
-
-      <body>
-        <a id="forkme_banner" href="https://github.com/manukall">View on GitHub</a>
-        <div class="shell">
-
-          <header>
-          <span class="ribbon-outer">
-            <span class="ribbon-inner">
-              <h1>Manuel Kallenbach</h1>
-              <h2>Softwaredevelopment with Ruby and Rails</h2>
-            </span>
-            <span class="left-tail"></span>
-            <span class="right-tail"></span>
-          </span>
-          </header>
-
-          <div id="no-downloads">
-            <span class="inner">
-            </span>
-          </div>
-
-
-          <span class="banner-fix"></span>
-
-
-          <section id="main_content">
-          <p>I am a software developer with a passion for Ruby and Ruby on Rails. I work test-driven – usually with RSpec and Cucumber. Currently I am situated in Berlin.</p>
-          <p>
-            You can reach me 
-            <ul>
-              <li>
-                by email at <a href='mailto:mk@manukall.de'>mk@manukall.de</a>
-              </li>
-              <li>
-                by phone at +49 157 370 300 29
-              </li>
-              <li>
-                by traditional mail at 
-                <ul>
-                  <li>Weichselstraße 41</li>
-                  <li>12045 Berlin</li>
-                  <li>Germany</li>
-                </ul>
-              </li>
-            </ul>
-          </p>
-
-
-          <h3>My portfolio includes:</h3>
-
-          <ul class='portfolio'>
-            <li class='project'>
-              <a href="http://www.housetrip.com" class='project_name'>housetrip.com</a> 
-
-              <ul>
-                <li>via <a href="http://www.makandra.de">makandra</a>
-                  <img src="images/housetrip.png" alt="housetrip screenshots">
-                </li>
-              </ul>
-            </li>
-            <li class='project'>
-              <a href="http://www.led-optix.de" class='project_name'>led-optix.de</a>
-
-              <ul>
-                <li>via <a href="http://www.makandra.de">makandra</a>
-                  <img src="images/led_optix.jpg" alt="led-optix screenshots">
-                </li>
-              </ul>
-            </li>
-            <li class='project'>
-              <a href="http://www.ask4feedback.de" class='project_name'>ask4feedback.de</a>
-
-              <ul>
-                <li>via <a href="http://www.makandra.de">makandra</a>
-                  <img src="images/ask4feedback.jpg" alt="ask4feedback screenshots">
-                </li>
-              </ul>
-            </li>
-            <li class='project last'>
-              <span class='project_name'>ERP / CRM systems</span>
-
-              <ul>
-                <li>via <a href="http://www.makandra.de">makandra</a>
-                  <img src="images/erp_crms.jpg" alt="erp / crm screenshots">
-                </li>
-              </ul>
-            </li>
-          </ul>
-
-          <section id='legal_stuff'>
-            <h3 class='header-level-1'>Legal stuff</h3>
-            <p>My USt-ID is: DE 257 206 871</p>
-
-            <h4>Privacy policy</h4>
-
-            <p>This website uses Google Analytics, a web analytics service provided by Google, Inc. (“Google”). Google Analytics uses “cookies”, which are text files placed on your computer, to help the website analyze how users use the site. The information generated by the cookie about your use of the website (including your IP address) will be transmitted to and stored by Google on servers in the United States . Google will use this information for the purpose of evaluating your use of the website, compiling reports on website activity for website operators and providing other services relating to website activity and internet usage. Google may also transfer this information to third parties where required to do so by law, or where such third parties process the information on Google's behalf. Google will not associate your IP address with any other data held by Google. You may refuse the use of cookies by selecting the appropriate settings on your browser, however please note that if you do this you may not be able to use the full functionality of this website. By using this website, you consent to the processing of data about you by Google in the manner and for the purposes set out above.</p>
-          </section>
-
-          </section>
-
-          <footer>
-          <span class="ribbon-outer">
-            <span class="ribbon-inner">
-              <p>Projects by <a href="https://github.com/manukall">manukall</a> can be found on <a href="https://github.com/manukall">GitHub</a></p>
-            </span>
-            <span class="left-tail"></span>
-            <span class="right-tail"></span>
-          </span>
-          <p>Generated with <a href="http://pages.github.com">GitHub Pages</a> using Merlot</p>
-          <span class="octocat"></span>
-          </footer>
-
-        </div>
-
-
-      </body>
-    </html>
+<!-- Pager -->
+{% if paginator.total_pages > 1 %}
+<ul class="pager">
+    {% if paginator.previous_page %}
+    <li class="previous">
+        <a href="{{ paginator.previous_page_path | prepend: site.baseurl | replace: '//', '/' }}">&larr; Newer Posts</a>
+    </li>
+    {% endif %}
+    {% if paginator.next_page %}
+    <li class="next">
+        <a href="{{ paginator.next_page_path | prepend: site.baseurl | replace: '//', '/' }}">Older Posts &rarr;</a>
+    </li>
+    {% endif %}
+</ul>
+{% endif %}
