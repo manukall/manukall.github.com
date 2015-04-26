@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Write your site description here. It will be used as your sites meta description as well!">
+
+    <title>Building a Simple Chat App in Elixir With Phoenix and RethinkDB - manukall</title>
+
+    <link rel="canonical" href="http://mk@manukall.de/2015/04/25/building-a-simple-chat-app-in-elixir-with-phoenix-and-rethinkdb/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/clean-blog.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href='//fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+
+<body>
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">manukall</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                
+                <li>
+                    <a href="/contact/">Contact</a>
+                </li>
+                
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+
+
+    <!-- Post Header -->
+<header class="intro-header" style="background-image: url('/img/fox.jpg')">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <h1>Building a Simple Chat App in Elixir With Phoenix and RethinkDB</h1>
+                    
+                    <span class="meta">Posted by manukall on April 25, 2015</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+
+				<p>In this posts we will explore how to connect <a href="http://rethinkdb.com/" target="_blank">RethinkDBs</a> changefeeds to <a href="http://www.phoenixframework.org" target="blank">Phoenix’s</a> channels. We are going to build a chat app that stores messages in a RethinkDB database.
+When a user connects, we listen to a changefeed on the database.
+As soon as a new message row is inserted into the databases, we push the JSON we receive from the changefeed directly to the user.</p>
+
+<p>For this, we will use the very young <a href="https://github.com/hamiltop/exrethinkdb" target="blank">exrethinkdb</a> library. I’m assuming Elixir and Phoenix are already set up.</p>
+
+<p>First we create a new phoenix application:</p>
+
+<pre><code>mix phoenix.new phoenix_exrethinkdb_chat --no-ecto
+</code></pre>
+
+<p>Then we need to add exrethinkdb as a dependency. As it is not published on hex yet, we fetch it from Github. In <code>phoenix_exrethinkdb_chat/mix.exs</code> change the deps method to:</p>
+
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><code class="language-elixir" data-lang="elixir">1
+2
+3
+4
+5
+6</code></pre></div></td><td class="code"><div class="highlight"><pre><span class="kd">defp</span> <span class="n">deps</span> <span class="k">do</span>
+   <span class="p">[{</span><span class="ss">:phoenix</span><span class="p">,</span> <span class="s2">&quot;~&gt; 0.11&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="ss">:phoenix_live_reload</span><span class="p">,</span> <span class="s2">&quot;~&gt; 0.3&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="ss">:exrethinkdb</span><span class="p">,</span> <span class="ss">github</span><span class="p">:</span> <span class="s2">&quot;hamiltop/exrethinkdb&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="ss">:cowboy</span><span class="p">,</span> <span class="s2">&quot;~&gt; 1.0&quot;</span><span class="p">}]</span>
+<span class="k">end</span>
+</pre></div>
+</td></tr></table>
+
+<p>Next we let mix install our new dependency. To do this run the following command (inside our new project’s directory):</p>
+
+<pre><code>mix deps.get
+</code></pre>
+
+<p>Because we do not want to reconnect to RethinkDB every time a new request happens, we will connect to it once when our application starts and keep a reference to the connection.
+We will use an <code>Agent</code> for this.
+Create the file <code>lib/phoenix_exrethinkdb_chat/repo.ex</code> with the following content:</p>
+
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><code class="language-elixir" data-lang="elixir"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13</code></pre></div></td><td class="code"><div class="highlight"><pre><span class="kd">defmodule</span> <span class="nc">PhoenixExrethinkdbChat.Repo</span> <span class="k">do</span>
+  <span class="kd">def</span> <span class="n">start_link</span> <span class="k">do</span>
+    <span class="n">conn</span> <span class="p">=</span> <span class="nc">Exrethinkdb</span><span class="p">.</span><span class="n">local_connection</span>
+    <span class="nc">Agent</span><span class="p">.</span><span class="n">start_link</span><span class="p">(</span><span class="k">fn</span> <span class="p">-&gt;</span> <span class="n">conn</span> <span class="k">end</span><span class="p">,</span> <span class="ss">name</span><span class="p">:</span> <span class="bp">__MODULE__</span><span class="p">)</span>
+    <span class="p">{</span><span class="ss">:ok</span><span class="p">,</span> <span class="n">self</span><span class="p">}</span>
+  <span class="k">end</span>
+
+  <span class="kd">def</span> <span class="n">run</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="k">do</span>
+    <span class="nc">Agent</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="bp">__MODULE__</span><span class="p">,</span> <span class="k">fn</span> <span class="n">conn</span> <span class="p">-&gt;</span>
+      <span class="nc">Exrethinkdb</span><span class="p">.</span><span class="n">run</span> <span class="n">conn</span><span class="p">,</span> <span class="n">query</span>
+    <span class="k">end</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+</td></tr></table>
+
+<p>To actually connect to the database when our application starts, we need to add our repo to the supervisor tree. In <code>lib/phoenix_exrethinkdb_chat.ex</code> add the following to the <code>children</code> array:</p>
+
+<pre><code>worker(PhoenixExrethinkdbChat.Repo, []),
+</code></pre>
+
+<p>Next we are going to add our HTML. We just want the page to display a list of messages and one input each for the user’s name and the message.
+Replace <code>web/templates/page/index.html.eex</code> with the following code, which is pretty much stolen from <a href="https://github.com/chrismccord/phoenix_chat_example">chrismccord’s phoenix chat app</a>:</p>
+
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><code class="language-html" data-lang="html"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18</code></pre></div></td><td class="code"><div class="highlight"><pre><span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;messages&quot;</span> <span class="na">class=</span><span class="s">&quot;container&quot;</span><span class="nt">&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;footer&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">&quot;container&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">&quot;row&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">&quot;col-sm-2&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">&quot;input-group&quot;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;span</span> <span class="na">class=</span><span class="s">&quot;input-group-addon&quot;</span><span class="nt">&gt;</span>@<span class="nt">&lt;/span&gt;</span>
+          <span class="nt">&lt;input</span> <span class="na">id=</span><span class="s">&quot;username&quot;</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">class=</span><span class="s">&quot;form-control&quot;</span>
+          <span class="na">placeholder=</span><span class="s">&quot;username&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;/div&gt;</span><span class="c">&lt;!-- /input-group --&gt;</span>
+      <span class="nt">&lt;/div&gt;</span><span class="c">&lt;!-- /.col-lg-6 --&gt;</span>
+      <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">&quot;col-sm-10&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;input</span> <span class="na">id=</span><span class="s">&quot;message-input&quot;</span> <span class="na">class=</span><span class="s">&quot;form-control&quot;</span> <span class="nt">/&gt;</span>
+      <span class="nt">&lt;/div&gt;</span><span class="c">&lt;!-- /.col-lg-6 --&gt;</span>
+    <span class="nt">&lt;/div&gt;</span><span class="c">&lt;!-- /.row --&gt;</span>
+  <span class="nt">&lt;/div&gt;</span>
+<span class="nt">&lt;/div&gt;</span>
+</pre></div>
+</td></tr></table>
+
+<p>We’re also going to shamelessly steal the javascript from the example chat app. Put the following into <code>web/static/js/app.js</code>:</p>
+
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><code class="language-js" data-lang="js"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55</code></pre></div></td><td class="code"><div class="highlight"><pre><span class="kr">import</span> <span class="p">{</span><span class="nx">Socket</span><span class="p">,</span> <span class="nx">LongPoller</span><span class="p">}</span> <span class="nx">from</span> <span class="s2">&quot;phoenix&quot;</span>
+
+<span class="kr">class</span> <span class="nx">App</span> <span class="p">{</span>
+
+  <span class="kr">static</span> <span class="nx">init</span><span class="p">(){</span>
+    <span class="kd">var</span> <span class="nx">socket</span>     <span class="o">=</span> <span class="k">new</span> <span class="nx">Socket</span><span class="p">(</span><span class="s2">&quot;ws://&quot;</span> <span class="o">+</span> <span class="nx">location</span><span class="p">.</span><span class="nx">host</span> <span class="o">+</span>  <span class="s2">&quot;/ws&quot;</span><span class="p">)</span>
+    <span class="nx">socket</span><span class="p">.</span><span class="nx">connect</span><span class="p">()</span>
+    <span class="kd">var</span> <span class="nx">$status</span>    <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#status&quot;</span><span class="p">)</span>
+    <span class="kd">var</span> <span class="nx">$messages</span>  <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#messages&quot;</span><span class="p">)</span>
+    <span class="kd">var</span> <span class="nx">$input</span>     <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#message-input&quot;</span><span class="p">)</span>
+    <span class="kd">var</span> <span class="nx">$username</span>  <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#username&quot;</span><span class="p">)</span>
+
+    <span class="nx">socket</span><span class="p">.</span><span class="nx">onClose</span><span class="p">(</span> <span class="nx">e</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;CLOSE&quot;</span><span class="p">,</span> <span class="nx">e</span><span class="p">))</span>
+
+    <span class="nx">socket</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s2">&quot;rooms:lobby&quot;</span><span class="p">,</span> <span class="p">{})</span>
+      <span class="p">.</span><span class="nx">receive</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;auth error&quot;</span><span class="p">)</span> <span class="p">)</span>
+      <span class="p">.</span><span class="nx">receive</span><span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">,</span> <span class="nx">chan</span> <span class="o">=&gt;</span> <span class="p">{</span>
+
+        <span class="nx">chan</span><span class="p">.</span><span class="nx">onError</span><span class="p">(</span> <span class="nx">e</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;something went wrong&quot;</span><span class="p">,</span> <span class="nx">e</span><span class="p">)</span> <span class="p">)</span>
+        <span class="nx">chan</span><span class="p">.</span><span class="nx">onClose</span><span class="p">(</span> <span class="nx">e</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;channel closed&quot;</span><span class="p">,</span> <span class="nx">e</span><span class="p">)</span> <span class="p">)</span>
+
+        <span class="nx">$input</span><span class="p">.</span><span class="nx">off</span><span class="p">(</span><span class="s2">&quot;keypress&quot;</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;keypress&quot;</span><span class="p">,</span> <span class="nx">e</span> <span class="o">=&gt;</span> <span class="p">{</span>
+          <span class="k">if</span> <span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">keyCode</span> <span class="o">==</span> <span class="mi">13</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">chan</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="s2">&quot;new:msg&quot;</span><span class="p">,</span> <span class="p">{</span><span class="nx">user</span><span class="o">:</span> <span class="nx">$username</span><span class="p">.</span><span class="nx">val</span><span class="p">(),</span> <span class="nx">body</span><span class="o">:</span> <span class="nx">$input</span><span class="p">.</span><span class="nx">val</span><span class="p">()})</span>
+            <span class="nx">$input</span><span class="p">.</span><span class="nx">val</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+          <span class="p">}</span>
+        <span class="p">})</span>
+
+        <span class="nx">chan</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;new:msg&quot;</span><span class="p">,</span> <span class="nx">msg</span> <span class="o">=&gt;</span> <span class="p">{</span>
+          <span class="nx">$messages</span><span class="p">.</span><span class="nx">append</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">messageTemplate</span><span class="p">(</span><span class="nx">msg</span><span class="p">))</span>
+          <span class="nx">scrollTo</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">document</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">scrollHeight</span><span class="p">)</span>
+        <span class="p">})</span>
+
+        <span class="nx">chan</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;user:entered&quot;</span><span class="p">,</span> <span class="nx">msg</span> <span class="o">=&gt;</span> <span class="p">{</span>
+          <span class="kd">var</span> <span class="nx">username</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sanitize</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">user</span> <span class="o">||</span> <span class="s2">&quot;anonymous&quot;</span><span class="p">)</span>
+          <span class="nx">$messages</span><span class="p">.</span><span class="nx">append</span><span class="p">(</span><span class="err">`</span><span class="o">&lt;</span><span class="nx">br</span><span class="o">/&gt;&lt;</span><span class="nx">i</span><span class="o">&gt;</span><span class="p">[</span><span class="nx">$</span><span class="p">{</span><span class="nx">username</span><span class="p">}</span> <span class="nx">entered</span><span class="p">]</span><span class="o">&lt;</span><span class="err">/i&gt;`)</span>
+        <span class="p">})</span>
+      <span class="p">})</span>
+      <span class="p">.</span><span class="nx">after</span><span class="p">(</span><span class="mi">10000</span><span class="p">,</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Connection interruption&quot;</span><span class="p">)</span> <span class="p">)</span>
+  <span class="p">}</span>
+
+  <span class="kr">static</span> <span class="nx">sanitize</span><span class="p">(</span><span class="nx">html</span><span class="p">){</span> <span class="k">return</span> <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;&lt;div/&gt;&quot;</span><span class="p">).</span><span class="nx">text</span><span class="p">(</span><span class="nx">html</span><span class="p">).</span><span class="nx">html</span><span class="p">()</span> <span class="p">}</span>
+
+  <span class="kr">static</span> <span class="nx">messageTemplate</span><span class="p">(</span><span class="nx">msg</span><span class="p">){</span>
+    <span class="kd">let</span> <span class="nx">username</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sanitize</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">user</span> <span class="o">||</span> <span class="s2">&quot;anonymous&quot;</span><span class="p">)</span>
+    <span class="kd">let</span> <span class="nx">body</span>     <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sanitize</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">body</span><span class="p">)</span>
+
+    <span class="k">return</span><span class="p">(</span><span class="err">`</span><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;&lt;</span><span class="nx">a</span> <span class="nx">href</span><span class="o">=</span><span class="s1">&#39;#&#39;</span><span class="o">&gt;</span><span class="p">[</span><span class="nx">$</span><span class="p">{</span><span class="nx">username</span><span class="p">}]</span><span class="o">&lt;</span><span class="err">/a&gt;&amp;nbsp; ${body}&lt;/p&gt;`)</span>
+  <span class="p">}</span>
+
+<span class="p">}</span>
+
+<span class="nx">$</span><span class="p">(</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="nx">App</span><span class="p">.</span><span class="nx">init</span><span class="p">()</span> <span class="p">)</span>
+
+<span class="kr">export</span> <span class="k">default</span> <span class="nx">App</span>
+</pre></div>
+</td></tr></table>
+
+<p>This needs jQuery. Download <a href="https://github.com/chrismccord/phoenix_chat_example/blob/46a9112a67010ccad283d6a70dd7426228498231/web/static/vendor/jquery.min.js" target="_blank">this version</a> directly from chrismccord’s repo to <code>web/static/vendor/jquery.min.js</code>.</p>
+
+<p>You can start the server by running <code>mix phoenix.server</code> now and open <a href="http://localhost:4000" target="_blank">http://localhost:4000</a>.
+RethinkDB needs to be started for this. For toy projects like this, I prefer to start a local instance by simply running <code>rethinkdb</code> inside the projects folder.</p>
+
+<p>If you check your browser console, you will see an error telling you that the app can’t connect to your server via websocket. Let’s fix that by adding a channel route.</p>
+
+<p>Open <code>web/router.ex</code> and add the following:</p>
+
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><code class="language-elixir" data-lang="elixir">1
+2
+3</code></pre></div></td><td class="code"><div class="highlight"><pre><span class="n">socket</span> <span class="s2">&quot;/ws&quot;</span><span class="p">,</span> <span class="nc">PhoenixExrethinkdbChat</span> <span class="k">do</span>
+  <span class="n">channel</span> <span class="s2">&quot;rooms:*&quot;</span><span class="p">,</span> <span class="nc">RoomChannel</span>
+<span class="k">end</span>
+</pre></div>
+</td></tr></table>
+
+<p>This tells the router to listen for websocket connections at <code>/ws</code> and use the <code>PhoenixExrethinkdbChat.RoomChannel</code> module for all requests to channels matching <code>rooms:*</code>.</p>
+
+<p>Next we need to create this module. Create the file <code>web/channels/room_channel.ex</code> with the following content:</p>
+
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><code class="language-elixir" data-lang="elixir"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35</code></pre></div></td><td class="code"><div class="highlight"><pre><span class="kd">defmodule</span> <span class="nc">PhoenixExrethinkdbChat.RoomChannel</span> <span class="k">do</span>
+  <span class="kn">use</span> <span class="nc">Phoenix.Channel</span>
+  <span class="kn">require</span> <span class="nc">Logger</span>
+  <span class="kn">alias</span> <span class="nc">Exrethinkdb.Query</span>
+  <span class="kn">alias</span> <span class="nc">PhoenixExrethinkdbChat.Repo</span>
+
+  <span class="kd">def</span> <span class="n">join</span><span class="p">(</span><span class="s2">&quot;rooms:lobby&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">socket</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">send</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="ss">:after_join</span><span class="p">)</span>
+    <span class="p">{</span><span class="ss">:ok</span><span class="p">,</span> <span class="n">socket</span><span class="p">}</span>
+  <span class="k">end</span>
+
+  <span class="kd">def</span> <span class="n">handle_info</span><span class="p">(</span><span class="ss">:after_join</span><span class="p">,</span> <span class="n">socket</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">q</span> <span class="p">=</span> <span class="nc">Query</span><span class="p">.</span><span class="n">table</span><span class="p">(</span><span class="s2">&quot;messages&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="p">=</span> <span class="nc">Repo</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+    <span class="nc">Enum</span><span class="p">.</span><span class="n">each</span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">data</span><span class="p">,</span> <span class="k">fn</span> <span class="n">message</span> <span class="p">-&gt;</span> <span class="n">push</span> <span class="n">socket</span><span class="p">,</span> <span class="s2">&quot;new:msg&quot;</span><span class="p">,</span> <span class="n">message</span> <span class="k">end</span><span class="p">)</span>
+
+    <span class="n">changes</span> <span class="p">=</span> <span class="nc">Query</span><span class="p">.</span><span class="n">changes</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+    <span class="o">|&gt;</span> <span class="nc">Repo</span><span class="p">.</span><span class="n">run</span>
+    <span class="nc">Task</span><span class="p">.</span><span class="n">async</span> <span class="k">fn</span> <span class="p">-&gt;</span>
+      <span class="nc">Enum</span><span class="p">.</span><span class="n">each</span><span class="p">(</span><span class="n">changes</span><span class="p">,</span> <span class="k">fn</span> <span class="n">change</span> <span class="p">-&gt;</span>
+        <span class="n">push</span> <span class="n">socket</span><span class="p">,</span> <span class="s2">&quot;new:msg&quot;</span><span class="p">,</span> <span class="n">change</span><span class="p">[</span><span class="s2">&quot;new_val&quot;</span><span class="p">]</span>
+      <span class="k">end</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="p">{</span><span class="ss">:noreply</span><span class="p">,</span> <span class="n">socket</span><span class="p">}</span>
+  <span class="k">end</span>
+
+  <span class="kd">def</span> <span class="n">handle_in</span><span class="p">(</span><span class="s2">&quot;new:msg&quot;</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">socket</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">q</span> <span class="p">=</span> <span class="nc">Query</span><span class="p">.</span><span class="n">table</span><span class="p">(</span><span class="s2">&quot;messages&quot;</span><span class="p">)</span>
+    <span class="o">|&gt;</span> <span class="nc">Query</span><span class="p">.</span><span class="n">insert</span><span class="p">(%{</span><span class="ss">user</span><span class="p">:</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">],</span> <span class="ss">body</span><span class="p">:</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;body&quot;</span><span class="p">]})</span>
+    <span class="nc">Repo</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+
+    <span class="p">{</span><span class="ss">:reply</span><span class="p">,</span> <span class="p">{</span><span class="ss">:ok</span><span class="p">,</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;body&quot;</span><span class="p">]},</span> <span class="n">assign</span><span class="p">(</span><span class="n">socket</span><span class="p">,</span> <span class="ss">:user</span><span class="p">,</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">])}</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+</td></tr></table>
+
+<p>The join method get’s called when users open the website. It allows everyone to join the channel “rooms:lobby” and sends a <code>after_join</code> message. This is an Elixir/Erlang message (see <a href="http://elixir-lang.org/getting-started/processes.html#send-and-receive" target="_blank">http://elixir-lang.org/getting-started/processes.html#send-and-receive</a>) - not a chat message. This message is handled at line 12. We first send all existing chat-messages back to the browser (line 15). Then we subscribe to the messages-table’s changefeed and send each new message as it comes (lines 17-23).</p>
+
+<p>The last step before we can try our application is setting up the database. For now, it is easiest to just create the table manually. Run <code>iex -S mix</code> in the console to start IEx. In the IEx shell execute <code>Exrethinkdb.Query.table_create("messages") |&gt; PhoenixExrethinkdbChat.Repo.run</code>.</p>
+
+<p>This is all. Restart your server and reload the browser page. In IEx run the following and watch the new message appear in your browser.</p>
+
+<p><code>Exrethinkdb.Query.table("messages") |&gt; Exrethinkdb.Query.insert(%{user: "kai", body: "hi"}) |&gt; PhoenixExrethinkdbChat.Repo.run</code></p>
+
+
+                <hr>
+
+                <ul class="pager">
+                    
+                    
+                </ul>
+
+            </div>
+        </div>
+    </div>
+</article>
+
+<hr>
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    <li>
+                        <a href="/feed.xml">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a href="https://twitter.com/manukall">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+                    <li>
+                        <a href="https://github.com/manukall">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">Copyright &copy; manukall 2015</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/clean-blog.min.js "></script>
+
+
+</body>
+
+</html>
