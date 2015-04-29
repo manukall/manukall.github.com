@@ -98,6 +98,8 @@ As soon as a new message row is inserted into the database, we push the JSON we 
 
 <p>For this, we will use the very young <a href="https://github.com/hamiltop/exrethinkdb" target="blank">exrethinkdb</a> library. I’m assuming Elixir and Phoenix are already set up.</p>
 
+<p>Then code of the finished example app can be found at <a href="https://github.com/manukall/phoenix_rethinkdb_chat" target="blank">https://github.com/manukall/phoenix_rethinkdb_chat</a>.</p>
+
 <p>First we create a new phoenix application:</p>
 
 <pre><code>mix phoenix.new phoenix_exrethinkdb_chat --no-ecto
@@ -113,7 +115,7 @@ As soon as a new message row is inserted into the database, we push the JSON we 
 6</code></pre></div></td><td class="code"><div class="highlight"><pre><span class="kd">defp</span> <span class="n">deps</span> <span class="k">do</span>
    <span class="p">[{</span><span class="ss">:phoenix</span><span class="p">,</span> <span class="s2">&quot;~&gt; 0.11&quot;</span><span class="p">},</span>
     <span class="p">{</span><span class="ss">:phoenix_live_reload</span><span class="p">,</span> <span class="s2">&quot;~&gt; 0.3&quot;</span><span class="p">},</span>
-    <span class="p">{</span><span class="ss">:exrethinkdb</span><span class="p">,</span> <span class="ss">github</span><span class="p">:</span> <span class="s2">&quot;hamiltop/exrethinkdb&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="ss">:exrethinkdb</span><span class="p">,</span> <span class="ss">github</span><span class="p">:</span> <span class="s2">&quot;hamiltop/exrethinkdb&quot;</span><span class="p">,</span> <span class="ss">ref</span><span class="p">:</span> <span class="s2">&quot;55fb5b5ed892f28b7ae8ee1b2f8e54fb651bd611&quot;</span><span class="p">},</span>
     <span class="p">{</span><span class="ss">:cowboy</span><span class="p">,</span> <span class="s2">&quot;~&gt; 1.0&quot;</span><span class="p">}]</span>
 <span class="k">end</span>
 </pre></div>
@@ -416,6 +418,15 @@ RethinkDB needs to be started for this. For toy projects like this, I prefer to 
 <p>This is all. Restart your server and reload the browser page. In IEx run the following and watch the new message appear in your browser.</p>
 
 <p><code>Exrethinkdb.Query.table("messages") |&gt; Exrethinkdb.Query.insert(%{user: "kai", body: "hi"}) |&gt; PhoenixExrethinkdbChat.Repo.run</code></p>
+
+<hr />
+
+<h4 id="changelog">Changelog</h4>
+
+<ul>
+  <li>2015-04-29: The exrethinkdb dependency now includes the specific git SHA</li>
+  <li>2015-04-29: Added link to github repository</li>
+</ul>
 
 
                 <hr>
