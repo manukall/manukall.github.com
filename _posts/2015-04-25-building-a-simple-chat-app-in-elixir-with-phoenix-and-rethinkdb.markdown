@@ -9,6 +9,8 @@ As soon as a new message row is inserted into the database, we push the JSON we 
 
 For this, we will use the very young [exrethinkdb](https://github.com/hamiltop/exrethinkdb){:target="blank"} library. I'm assuming Elixir and Phoenix are already set up.
 
+Then code of the finished example app can be found at <https://github.com/manukall/phoenix_rethinkdb_chat>{:target="blank"}.
+
 First we create a new phoenix application:
 
     mix phoenix.new phoenix_exrethinkdb_chat --no-ecto
@@ -19,7 +21,7 @@ Then we need to add exrethinkdb as a dependency. As it is not published on hex y
 defp deps do
    [{:phoenix, "~> 0.11"},
     {:phoenix_live_reload, "~> 0.3"},
-    {:exrethinkdb, github: "hamiltop/exrethinkdb"},
+    {:exrethinkdb, github: "hamiltop/exrethinkdb", ref: "55fb5b5ed892f28b7ae8ee1b2f8e54fb651bd611"},
     {:cowboy, "~> 1.0"}]
 end
 {% endhighlight %}
@@ -204,3 +206,11 @@ The last step before we can try our application is setting up the database. For 
 This is all. Restart your server and reload the browser page. In IEx run the following and watch the new message appear in your browser.
 
 `Exrethinkdb.Query.table("messages") |> Exrethinkdb.Query.insert(%{user: "kai", body: "hi"}) |> PhoenixExrethinkdbChat.Repo.run`
+
+
+---------
+
+#### Changelog
+
+* 2015-04-29: The exrethinkdb dependency now includes the specific git SHA
+* 2015-04-29: Added link to github repository
