@@ -8,9 +8,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Software development with Ruby, Rails, Elixir, Javascript and more.">
 
-    <title>Saving Base64 Encoded Data as Paperclip 4 Attachments - manukall</title>
+    <title>Automatically Building Your Phoenix Assets With Webpack - manukall</title>
 
-    <link rel="canonical" href="http://manukall.de/2015/04/30/saving-base64-encoded-data-as-paperclip-4-attachments/">
+    <link rel="canonical" href="http://manukall.de/2015/05/01/automatically-building-your-phoenix-assets-with-webpack/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -77,9 +77,9 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                 <div class="post-heading">
-                    <h1>Saving Base64 Encoded Data as Paperclip 4 Attachments</h1>
+                    <h1>Automatically Building Your Phoenix Assets With Webpack</h1>
                     
-                    <span class="meta">Posted by manukall on April 30, 2015</span>
+                    <span class="meta">Posted by manukall on May 1, 2015</span>
                 </div>
             </div>
         </div>
@@ -92,37 +92,52 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
 
-				      <p>Recently I had to implement part of the Rails backend of an app that allowed the user to upload pictures.
-Those pictures are base64 encoded in the browser and sent to the API together with their content type and file name.</p>
+				      <p>By default <a href="http://www.phoenixframework.org/" target="_blank">Phoenix</a> (currently version 0.12) comes with support for <a href="http://brunch.io/" target="_blank">brunch.io</a>.
+I prefer using <a href="https://webpack.github.io/" target="_blank">Webpack</a> to build my assets, though.
+Fortunately creating a Phoenix app that uses Webpack instead of brunch.io is pretty easy:</p>
 
-<p>Request parameters would look like this:</p>
+<p>Create your new app with the <code>--no-brunch</code> flag:</p>
 
-<div class="highlight"><pre><code class="language-json" data-lang="json"><span class="err">picture:</span> <span class="p">{</span>
-  <span class="err">data:</span> <span class="nt">&quot;base64encodedimage&quot;</span><span class="p">,</span>
-  <span class="err">content_type:</span> <span class="nt">&quot;image/jpg&quot;</span><span class="p">,</span>
-  <span class="err">filename:</span> <span class="nt">&quot;image.jpg&quot;</span>
-<span class="p">}</span></code></pre></div>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">mix phoenix.new /tmp/my_app --no-brunch</code></pre></div>
 
-<p>The app already used <a href="https://github.com/thoughtbot/paperclip" target="_blank">paperclip</a> 4, so we were going to use that here as well.</p>
+<p>Initialize npm and install Webpack:</p>
 
-<p>After some stumbling around and some more <code>Paperclip::AdapterRegistry::NoHandlerError</code>s, it turned out that it’s actually quite easy to make paperclip happy.</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">cd</span> /tmp/my_app
+npm init
+npm install --save-dev webpack</code></pre></div>
 
-<p>With the usual model code (we have a <code>Picture</code> model with an attachment called <code>image</code>), just turn the parameters into a valid data URI in the controller action and manually pick the adapter:</p>
+<p>Add webpack to the watchers array in your development config (<code>/tmp/my_app/config/dev.exs</code>):</p>
 
-<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><code class="language-ruby" data-lang="ruby">1
-2
-3
-4
-5
-6</code></pre></div></td><td class="code"><div class="highlight"><pre><span class="n">picture_params</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:picture</span><span class="o">]</span>
-<span class="n">encoded_picture</span> <span class="o">=</span> <span class="n">picture_params</span><span class="o">[</span><span class="ss">:data</span><span class="o">]</span>
-<span class="n">content_type</span> <span class="o">=</span> <span class="n">picture_params</span><span class="o">[</span><span class="ss">:content_type</span><span class="o">]</span>
-<span class="n">image</span> <span class="o">=</span> <span class="no">Paperclip</span><span class="o">.</span><span class="n">io_adapters</span><span class="o">.</span><span class="n">for</span><span class="p">(</span><span class="s2">&quot;data:</span><span class="si">#{</span><span class="n">content_type</span><span class="si">}</span><span class="s2">;base64,</span><span class="si">#{</span><span class="n">encoded_picture</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="n">image</span><span class="o">.</span><span class="n">original_filename</span> <span class="o">=</span> <span class="n">picture_params</span><span class="o">[</span><span class="ss">:filename</span><span class="o">]</span>
-<span class="vi">@picture</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="n">image</span>
-</pre></div>
-</td></tr></table>
+<div class="highlight"><pre><code class="language-elixir" data-lang="elixir"><span class="n">config</span> <span class="ss">:my_app</span><span class="p">,</span> <span class="nc">MyApp.Endpoint</span><span class="p">,</span>
+  <span class="p">...</span>
+  <span class="ss">watchers</span><span class="p">:</span> <span class="p">[{</span><span class="nc">Path</span><span class="p">.</span><span class="n">expand</span><span class="p">(</span><span class="s2">&quot;node_modules/webpack/bin/webpack.js&quot;</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;--watch&quot;</span><span class="p">,</span> <span class="s2">&quot;--colors&quot;</span><span class="p">,</span> <span class="s2">&quot;--progress&quot;</span><span class="p">]}]</span></code></pre></div>
 
+<p>Add a webpack config (<code>/tmp/my_app/webpack.config.js</code>)</p>
+
+<div class="highlight"><pre><code class="language-js" data-lang="js"><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nx">entry</span><span class="o">:</span> <span class="s2">&quot;./web/static/js/app.js&quot;</span><span class="p">,</span>
+    <span class="nx">output</span><span class="o">:</span> <span class="p">{</span>
+        <span class="nx">path</span><span class="o">:</span> <span class="s2">&quot;./priv/static/js&quot;</span><span class="p">,</span>
+        <span class="nx">filename</span><span class="o">:</span> <span class="s2">&quot;bundle.js&quot;</span>
+    <span class="p">}</span>
+<span class="p">};</span></code></pre></div>
+
+<p>Include the generated js file in your application template (<code>/tmp/my_app/web/templates/layout/application.html.eex</code>).</p>
+
+<p>Replace</p>
+
+<div class="highlight"><pre><code class="language-html-erb" data-lang="html+erb"><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;</span><span class="cp">&lt;%=</span> <span class="n">static_path</span><span class="p">(</span><span class="vi">@conn</span><span class="p">,</span> <span class="s2">&quot;/js/app.js&quot;</span><span class="p">)</span> <span class="cp">%&gt;</span><span class="s">&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+<span class="nt">&lt;script&gt;</span><span class="nx">require</span><span class="p">(</span><span class="s2">&quot;web/static/js/app&quot;</span><span class="p">)</span><span class="nt">&lt;/script&gt;</span></code></pre></div>
+
+<p>with</p>
+
+<div class="highlight"><pre><code class="language-html-erb" data-lang="html+erb"><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;</span><span class="cp">&lt;%=</span> <span class="n">static_path</span><span class="p">(</span><span class="vi">@conn</span><span class="p">,</span> <span class="s2">&quot;/js/bundle.js&quot;</span><span class="p">)</span> <span class="cp">%&gt;</span><span class="s">&quot;</span><span class="nt">&gt;&lt;/script&gt;</span></code></pre></div>
+
+<p>Create the source javascript file (<code>/tmp/my_app/web/static/js/app.js</code>):</p>
+
+<div class="highlight"><pre><code class="language-js" data-lang="js"><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Hello from Webpack&quot;</span><span class="p">);</span></code></pre></div>
+
+<p>Start the server (<code>mix phoenix.server</code>), <a href="http://localhost:4000/" target="_blank">open your browser</a> and check the console.</p>
 
 
                 <hr>
@@ -130,13 +145,9 @@ Those pictures are base64 encoded in the browser and sent to the API together wi
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2015/04/25/building-a-simple-chat-app-in-elixir-with-phoenix-and-rethinkdb/" data-toggle="tooltip" data-placement="top" title="Building a Simple Chat App in Elixir With Phoenix and RethinkDB">&larr; Previous Post</a>
+                        <a href="/2015/04/30/saving-base64-encoded-data-as-paperclip-4-attachments/" data-toggle="tooltip" data-placement="top" title="Saving Base64 Encoded Data as Paperclip 4 Attachments">&larr; Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/2015/05/01/automatically-building-your-phoenix-assets-with-webpack/" data-toggle="tooltip" data-placement="top" title="Automatically Building Your Phoenix Assets With Webpack">Next Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
@@ -152,7 +163,7 @@ Those pictures are base64 encoded in the browser and sent to the API together wi
       <script type="text/javascript">
        /* * * CONFIGURATION VARIABLES * * */
        var disqus_shortname = 'manukallde';
-       var disqus_url = "http://manukall.de/2015/04/30/saving-base64-encoded-data-as-paperclip-4-attachments/";
+       var disqus_url = "http://manukall.de/2015/05/01/automatically-building-your-phoenix-assets-with-webpack/";
 
        /* * * DON'T EDIT BELOW THIS LINE * * */
        (function() {
