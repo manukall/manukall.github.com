@@ -7,6 +7,7 @@ baseurl: ""
 url: "http://manukall.de"
 twitter_username: manukall
 github_username:  manukall
+linkedin_url:  "https://de.linkedin.com/pub/manuel-kallenbach/15/462/297"
 
 # Build settings
 markdown: kramdown
