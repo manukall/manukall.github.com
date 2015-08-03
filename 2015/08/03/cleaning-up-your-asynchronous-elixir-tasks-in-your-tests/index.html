@@ -8,9 +8,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Software development with Ruby, Rails, Elixir, Javascript and more.">
 
-    <title>manukall</title>
+    <title>Cleaning Up Your Asynchronous Elixir Tasks in Your Tests - manukall</title>
 
-    <link rel="canonical" href="http://manukall.de/">
+    <link rel="canonical" href="http://manukall.de/2015/08/03/cleaning-up-your-asynchronous-elixir-tasks-in-your-tests/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -71,72 +71,87 @@
 </nav>
 
 
-    <!-- Page Header -->
+    <!-- Post Header -->
 <header class="intro-header" style="background-image: url('/img/fox.jpg')">
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                <div class="site-heading">
-                    <h1>manukall</h1>
-                    <hr class="small">
-                    <span class="subheading">Software development with Ruby, Rails, Elixir, Javascript and more.</span>
+                <div class="post-heading">
+                    <h1>Cleaning Up Your Asynchronous Elixir Tasks in Your Tests</h1>
+                    
+                    <span class="meta">Posted by manukall on August 3, 2015</span>
                 </div>
             </div>
         </div>
     </div>
 </header>
 
-<!-- Main Content -->
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+
+				      <p>Asynchronous tasks in elixir are a great way of performing actions that your main code does not have to wait for.</p>
+
+<p>If you start them using <code>Task.start(...)</code> they will not be linked to the current process. This means an error in the task can not crash your current process.</p>
+
+<p>In tests this can lead to unexpected behaviour though, as tasks might still be executing when your test has already finished.
+I ran into this, when a task was still trying to access database resources that were already deleted by the tests <code>on_exit</code> function.</p>
+
+<p>To work around that, I added a <code>Task.Supervisor</code> to my projects supervision hierarchy and started my tasks through that.
+This allows you to get a reference to all tasks in your tests and handle them by either waiting for or killing them.</p>
+
+<p>To do that, just add the supervisor to the <code>children</code> array in your apps <code>start</code> callback:</p>
+
+<div class="highlight"><pre><code class="language-elixir" data-lang="elixir"><span class="n">children</span> <span class="p">=</span> <span class="p">[</span>
+  <span class="p">...</span>
+  <span class="n">supervisor</span><span class="p">(</span><span class="nc">Task.Supervisor</span><span class="p">,</span> <span class="p">[[</span><span class="ss">name</span><span class="p">:</span> <span class="nc">MyApp.TaskSupervisor</span><span class="p">]]),</span>
+  <span class="p">...</span>
+<span class="p">]</span></code></pre></div>
+
+<p>And in your tests handle the tasks accordingly:</p>
+
+<div class="highlight"><pre><code class="language-elixir" data-lang="elixir"><span class="nc">Task.Supervisor</span><span class="p">.</span><span class="n">children</span><span class="p">(</span><span class="nc">MyApp.TaskSupervisor</span><span class="p">)</span>
+<span class="o">|&gt;</span> <span class="nc">Enum</span><span class="p">.</span><span class="n">map</span><span class="p">(</span><span class="k">fn</span> <span class="n">child</span> <span class="p">-&gt;</span> <span class="nc">Task.Supervisor</span><span class="p">.</span><span class="n">terminate_child</span><span class="p">(</span><span class="nc">MyApp.TaskSupervisor</span><span class="p">,</span> <span class="n">child</span><span class="p">)</span> <span class="k">end</span><span class="p">)</span></code></pre></div>
+
+
+
+                <hr>
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2015/05/01/automatically-building-your-phoenix-assets-with-webpack/" data-toggle="tooltip" data-placement="top" title="Automatically Building Your Phoenix Assets With Webpack">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+            </div>
+        </div>
+    </div>
+</article>
+
 <div class="container">
-	<div class="row">
-		<div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-			
-<div class="post-preview">
-    <a href="/2015/08/03/cleaning-up-your-asynchronous-elixir-tasks-in-your-tests/">
-        <h2 class="post-title">            Cleaning Up Your Asynchronous Elixir Tasks in Your Tests
-        </h2>
-        
-    </a>
-    <p class="post-meta">Posted by manukall on August 3, 2015</p>
-</div>
-<hr>
+  <div class="row">
+    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+      <div id="disqus_thread"></div>
+      <script type="text/javascript">
+       /* * * CONFIGURATION VARIABLES * * */
+       var disqus_shortname = 'manukallde';
+       var disqus_url = "http://manukall.de/2015/08/03/cleaning-up-your-asynchronous-elixir-tasks-in-your-tests/";
 
-<div class="post-preview">
-    <a href="/2015/05/01/automatically-building-your-phoenix-assets-with-webpack/">
-        <h2 class="post-title">            Automatically Building Your Phoenix Assets With Webpack
-        </h2>
-        
-    </a>
-    <p class="post-meta">Posted by manukall on May 1, 2015</p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2015/04/30/saving-base64-encoded-data-as-paperclip-4-attachments/">
-        <h2 class="post-title">            Saving Base64 Encoded Data as Paperclip 4 Attachments
-        </h2>
-        
-    </a>
-    <p class="post-meta">Posted by manukall on April 30, 2015</p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2015/04/25/building-a-simple-chat-app-in-elixir-with-phoenix-and-rethinkdb/">
-        <h2 class="post-title">            Building a Simple Chat App in Elixir With Phoenix and RethinkDB
-        </h2>
-        
-    </a>
-    <p class="post-meta">Posted by manukall on April 25, 2015</p>
-</div>
-<hr>
-
-
-<!-- Pager -->
-
-
-		</div>
-	</div>
+       /* * * DON'T EDIT BELOW THIS LINE * * */
+       (function() {
+         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+         dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+       })();
+      </script>
+      <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+    </div>
+  </div>
 </div>
 
 <hr>
